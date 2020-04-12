@@ -4,7 +4,9 @@
 #include "thirdparty/misc/stb_vorbis.c"
 
 AudioStreamRAM::AudioStreamRAM() :
-		capacity(SAFE_FRAMES), nframes(0), length(0) {
+		capacity(SAFE_FRAMES),
+		nframes(0),
+		length(0) {
 	mix_rate = AudioServer::get_singleton()->get_mix_rate();
 	data = (AudioFrame *)memalloc(capacity * sizeof(AudioFrame));
 	valid = data != NULL;
@@ -174,7 +176,8 @@ void AudioStreamRAM::_bind_methods() {
 }
 
 AudioStreamPlaybackRAM::AudioStreamPlaybackRAM() :
-		active(false), position(0) {
+		active(false),
+		position(0) {
 }
 
 AudioStreamPlaybackRAM::~AudioStreamPlaybackRAM() {
