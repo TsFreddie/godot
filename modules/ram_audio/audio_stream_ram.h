@@ -18,14 +18,15 @@ class AudioStreamRAM : public AudioStream {
 
 private:
 	friend class AudioStreamPlaybackRAM;
-	bool valid;
-	AudioFrame *data;
-	uint32_t nframes;
 	uint32_t capacity;
+	uint32_t nframes;
 	float length;
+	AudioFrame *data;
+
 	int mix_rate;
 	// void _premix(int16_t *pcm_data, float position);
 	int _decode_vorbis(String filename);
+	int _decode_wave(String filename);
 	int _resample_from(int source_rate);
 	void update_length();
 
@@ -35,7 +36,6 @@ public:
 
 	void load(String path);
 	bool is_valid();
-	// uint32_t get_frame_count();
 
 	virtual Ref<AudioStreamPlayback> instance_playback();
 	virtual String get_stream_name() const;
