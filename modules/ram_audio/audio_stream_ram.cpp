@@ -23,7 +23,7 @@ int AudioStreamRAM::_resample_from(int source_rate) {
 	uint32_t new_length = uint32_t(nframes * (mix_rate / double(source_rate)));
 	AudioFrame *new_data = (AudioFrame *)memalloc((new_length) * sizeof(AudioFrame));
 	if (new_data == NULL) {
-		free(data);
+		memfree(data);
 		data = NULL;
 		return -2;
 	}
