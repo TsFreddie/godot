@@ -5,6 +5,7 @@
 #include "core/reference.h"
 #include "core/resource.h"
 #include "servers/audio/audio_stream.h"
+#include "thirdparty/misc/stb_vorbis.h"
 
 class AudioStreamRAM : public AudioStream {
 	GDCLASS(AudioStreamRAM, AudioStream)
@@ -23,7 +24,7 @@ private:
 	float length;
 	AudioFrame *data;
 
-	int mix_rate;
+	uint32_t mix_rate;
 	// void _premix(int16_t *pcm_data, float position);
 	int _decode_vorbis(String filename);
 	int _decode_wave(String filename);

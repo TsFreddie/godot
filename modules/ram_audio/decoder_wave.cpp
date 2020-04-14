@@ -69,10 +69,6 @@ static inline float decode_nibble(uint8_t nibble, int16_t &p, int &s) {
 	else if (s > 88)
 		s = 88;
 
-	if (p < -32768)
-		return -1;
-	else if (p > 32767)
-		return 1;
 	return p / 32767.0f;
 }
 
@@ -120,7 +116,7 @@ int AudioStreamRAM::_decode_wave(String filename) {
 				break;
 		}
 		index += chunk->chunk_size + sizeof(uint32_t) * 2;
-		if (index + 12 + sizeof(uint32_t) * 2 >= file_buf.size()) {
+		if (index + 12 + sizeof(uint32_t) * 2 >= (uint32_t)file_buf.size()) {
 			break;
 		}
 	}
@@ -178,7 +174,7 @@ int AudioStreamRAM::_decode_wave(String filename) {
 
 		bool is_single_channel = fmt->channel_count == 1;
 
-		for (int i = 0; i < nframes; ++i) {
+		for (uint32_t i = 0; i < nframes; ++i) {
 			for (int ch = 0; ch < 2; ch++) {
 				uint8_t *value = (uint8_t *)buffer + i * fmt->frame_size;
 				if (!is_single_channel) {

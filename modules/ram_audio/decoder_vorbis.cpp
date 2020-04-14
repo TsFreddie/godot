@@ -1,6 +1,5 @@
 #include "audio_stream_ram.h"
 #include "core/os/file_access.h"
-#include "thirdparty/misc/stb_vorbis.c"
 
 int AudioStreamRAM::_decode_vorbis(String filename) {
 	Error r_error;
@@ -8,10 +7,13 @@ int AudioStreamRAM::_decode_vorbis(String filename) {
 
 	Vector<uint8_t> file_buf = FileAccess::get_file_as_array(filename, &r_error);
 	stb_vorbis *f = stb_vorbis_open_memory(file_buf.ptr(), file_buf.size(), &error, NULL);
+
+	stb_vorbis_info info = stb_vorbis_get_info(f);
+
 	if (f == NULL) return -1;
 
-	int sample_rate = f->sample_rate;
-	int channels = f->channels;
+	uint32_t sample_rate = info.sample_rate;
+	int channels = info.channels;
 
 	float **buffer = NULL;
 
