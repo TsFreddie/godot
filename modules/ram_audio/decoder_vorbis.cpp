@@ -8,9 +8,8 @@ int AudioStreamRAM::_decode_vorbis(String filename) {
 	Vector<uint8_t> file_buf = FileAccess::get_file_as_array(filename, &r_error);
 	stb_vorbis *f = stb_vorbis_open_memory(file_buf.ptr(), file_buf.size(), &error, NULL);
 
-	stb_vorbis_info info = stb_vorbis_get_info(f);
-
 	if (f == NULL) return -1;
+	stb_vorbis_info info = stb_vorbis_get_info(f);
 
 	uint32_t sample_rate = info.sample_rate;
 	int channels = info.channels;

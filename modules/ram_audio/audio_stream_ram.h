@@ -54,6 +54,8 @@ private:
 	Ref<AudioStreamRAM> base;
 	bool active;
 	uint32_t position;
+	uint32_t start_position;
+	uint32_t end_position;
 
 public:
 	virtual void start(float p_from_pos = 0.0);
@@ -64,8 +66,14 @@ public:
 	virtual void seek(float p_time);
 	virtual void mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames);
 	virtual float get_length() const;
+
+	void set_slice(float p_start, float p_length = -1);
+
 	AudioStreamPlaybackRAM();
 	~AudioStreamPlaybackRAM();
+
+protected:
+	static void _bind_methods();
 };
 
 #endif

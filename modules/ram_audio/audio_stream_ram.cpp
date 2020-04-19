@@ -81,6 +81,9 @@ Ref<AudioStreamPlayback> AudioStreamRAM::instance_playback() {
 	Ref<AudioStreamPlaybackRAM> playback;
 	playback.instance();
 	playback->base = Ref<AudioStreamRAM>(this);
+	playback->position = 0;
+	playback->start_position = 0;
+	playback->end_position = nframes;
 	return playback;
 }
 
@@ -119,24 +122,21 @@ void AudioStreamPlaybackRAM::start(float p_from_pos) {
 }
 
 void AudioStreamPlaybackRAM::seek(float p_time) {
-	uint32_t max = base->nframes;
-	position = p_time * base->mix_rate;
-	if (position >= max) {
-		position = 0;
+	position = start_position + p_time * base->mix_rate;
+	if (position >= end_position) {
+		position = end_position;
 	}
 }
 
 void AudioStreamPlaybackRAM::mix(AudioFrame *p_buffer, float p_rate, int p_frames) {
 	ERR_FAIL_COND(!active);
 
-	uint32_t max = base->data == NULL ? 0 : base->nframes;
 	uint32_t end_of_mix = position + p_frames;
 	int mix_frames = p_frames;
 
-	if (max <= end_of_mix) {
-		mix_frames = p_frames - (end_of_mix - max);
-		end_of_mix = max;
-		active = false;
+	if (end_position <= end_of_mix) {
+		mix_frames = p_frames - (end_of_mix - end_position);
+		end_of_mix = end_position;
 	}
 
 	for (int i = 0; i < mix_frames; ++i) {
@@ -156,9 +156,36 @@ int AudioStreamPlaybackRAM::get_loop_count() const {
 float AudioStreamPlaybackRAM::get_playback_position() const {
 	return position / (float)base->mix_rate;
 }
+
 float AudioStreamPlaybackRAM::get_length() const {
-	return base->length;
+	float length = (end_position - start_position) / (float)base->mix_rate;
+
+	if (length < 0.0213) length = 0.0213; // no infinite sound
+	return length;
 }
+
+void AudioStreamPlaybackRAM::set_slice(float p_start, float p_length) {
+	uint32_t nframes = base->nframes;
+
+	position = start_position = p_start * base->mix_rate;
+	if (start_position > nframes) {
+		position = start_position = nframes;
+	}
+
+	if (p_length < 0) {
+		end_position = nframes;
+	} else {
+		end_position = start_position + p_length * base->mix_rate;
+		if (end_position > nframes) {
+			end_position = nframes;
+		}
+	}
+}
+
 bool AudioStreamPlaybackRAM::is_playing() const {
 	return active;
+}
+
+void AudioStreamPlaybackRAM::_bind_methods() {
+	ClassDB::bind_method("set_slice", &AudioStreamPlaybackRAM::set_slice);
 }

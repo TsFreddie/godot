@@ -76,7 +76,7 @@ int AudioStreamRAM::_decode_wave(String filename) {
 	Error r_error;
 
 	Vector<uint8_t> file_buf = FileAccess::get_file_as_array(filename, &r_error);
-	if (file_buf.size() < 12) return -1;
+	if (r_error || file_buf.size() < 12) return -1;
 
 	const RiffHeader *header = (RiffHeader *)file_buf.ptr();
 	if (header->riff_id != WAVE_UINT32_RIFF || header->wave_id != WAVE_UINT32_WAVE) return -1;
