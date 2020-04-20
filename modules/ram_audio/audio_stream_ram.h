@@ -53,9 +53,13 @@ class AudioStreamPlaybackRAM : public AudioStreamPlayback {
 private:
 	Ref<AudioStreamRAM> base;
 	bool active;
+	bool loop;
+	int loop_count;
 	uint32_t position;
 	uint32_t start_position;
 	uint32_t end_position;
+	inline void _mix_loop(AudioFrame *p_buffer, float p_rate_scale, int p_frames);
+	inline void _mix(AudioFrame *p_buffer, float p_rate_scale, int p_frames);
 
 public:
 	virtual void start(float p_from_pos = 0.0);
@@ -68,6 +72,7 @@ public:
 	virtual float get_length() const;
 
 	void set_slice(float p_start, float p_length = -1);
+	void set_loop(bool is_loop);
 
 	AudioStreamPlaybackRAM();
 	~AudioStreamPlaybackRAM();

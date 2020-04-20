@@ -81,8 +81,6 @@ Ref<AudioStreamPlayback> AudioStreamRAM::instance_playback() {
 	Ref<AudioStreamPlaybackRAM> playback;
 	playback.instance();
 	playback->base = Ref<AudioStreamRAM>(this);
-	playback->position = 0;
-	playback->start_position = 0;
 	playback->end_position = nframes;
 	return playback;
 }
@@ -102,7 +100,9 @@ void AudioStreamRAM::_bind_methods() {
 
 AudioStreamPlaybackRAM::AudioStreamPlaybackRAM() :
 		active(false),
-		position(0) {
+		loop(false),
+		position(0),
+		start_position(0) {
 }
 
 AudioStreamPlaybackRAM::~AudioStreamPlaybackRAM() {
@@ -118,6 +118,7 @@ void AudioStreamPlaybackRAM::start(float p_from_pos) {
 	}
 
 	seek(p_from_pos);
+	loop_count = 0;
 	active = true;
 }
 
@@ -128,9 +129,21 @@ void AudioStreamPlaybackRAM::seek(float p_time) {
 	}
 }
 
-void AudioStreamPlaybackRAM::mix(AudioFrame *p_buffer, float p_rate, int p_frames) {
-	ERR_FAIL_COND(!active);
+inline void AudioStreamPlaybackRAM::_mix_loop(AudioFrame *p_buffer, float p_rate, int p_frames) {
+	for (int i = 0; i < p_frames; ++i) {
+		if (end_position <= start_position) {
+			p_buffer[i] = AudioFrame(0, 0);
+		} else {
+			if (position >= end_position) {
+				position = start_position;
+				++loop_count;
+			}
+			p_buffer[i] = base->data[position++];
+		}
+	}
+}
 
+inline void AudioStreamPlaybackRAM::_mix(AudioFrame *p_buffer, float p_rate, int p_frames) {
 	uint32_t end_of_mix = position + p_frames;
 	int mix_frames = p_frames;
 
@@ -139,15 +152,35 @@ void AudioStreamPlaybackRAM::mix(AudioFrame *p_buffer, float p_rate, int p_frame
 		end_of_mix = end_position;
 	}
 
+	int remain = p_frames - mix_frames;
+
 	for (int i = 0; i < mix_frames; ++i) {
 		p_buffer[i] = base->data[position + i];
 	}
 
-	for (int i = mix_frames; i < p_frames; ++i) {
-		p_buffer[i] = AudioFrame(0, 0);
+	if (remain > 0) {
+		for (int i = mix_frames; i < p_frames; ++i) {
+			p_buffer[i] = AudioFrame(0, 0);
+		}
+		active = false;
 	}
 
 	position = end_of_mix;
+}
+
+void AudioStreamPlaybackRAM::mix(AudioFrame *p_buffer, float p_rate, int p_frames) {
+	if (!active) {
+		for (int i = 0; i < p_frames; ++i) {
+			p_buffer[i] = AudioFrame(0, 0);
+		}
+		return;
+	}
+
+	if (loop) {
+		_mix_loop(p_buffer, p_rate, p_frames);
+	} else {
+		_mix(p_buffer, p_rate, p_frames);
+	}
 }
 
 int AudioStreamPlaybackRAM::get_loop_count() const {
@@ -158,9 +191,11 @@ float AudioStreamPlaybackRAM::get_playback_position() const {
 }
 
 float AudioStreamPlaybackRAM::get_length() const {
+	if (loop) return 0;
+
 	float length = (end_position - start_position) / (float)base->mix_rate;
 
-	if (length < 0.0213) length = 0.0213; // no infinite sound
+	if (length < 0.0213) length = 0.0213;
 	return length;
 }
 
@@ -182,10 +217,15 @@ void AudioStreamPlaybackRAM::set_slice(float p_start, float p_length) {
 	}
 }
 
+void AudioStreamPlaybackRAM::set_loop(bool is_loop) {
+	loop = is_loop;
+}
+
 bool AudioStreamPlaybackRAM::is_playing() const {
 	return active;
 }
 
 void AudioStreamPlaybackRAM::_bind_methods() {
 	ClassDB::bind_method("set_slice", &AudioStreamPlaybackRAM::set_slice);
+	ClassDB::bind_method("set_loop", &AudioStreamPlaybackRAM::set_loop);
 }
