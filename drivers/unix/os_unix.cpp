@@ -912,11 +912,14 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 				p_pipe_mutex->unlock();
 			}
 		}
-		int rv = pclose(f);
+		int rv = WEXITSTATUS(pclose(f));
 
 		if (r_exitcode) {
-			*r_exitcode = WEXITSTATUS(rv);
+			*r_exitcode = rv;
 		}
+
+		// Check reserved shell exit codes: Command Cannot Execute or Command Not Found
+		ERR_FAIL_COND_V_MSG(rv == 126 || rv == 127, FAILED, "Could not create child process: " + p_path);
 		return OK;
 	}
 
